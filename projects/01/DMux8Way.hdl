@@ -16,5 +16,12 @@ CHIP DMux8Way {
     OUT a, b, c, d, e, f, g, h;
 
     PARTS:
-    // Put your code here:
+    // The first and second sel bits
+    DMux4Way(in=in, sel=sel[0..1], a=dmux1, b=dmux2, c=dmux3, d=dmux4);
+
+    // The third
+    DMux(in=dmux1, sel=sel[2], a=a, b=e);
+    DMux(in=dmux2, sel=sel[2], a=b, b=f);
+    DMux(in=dmux3, sel=sel[2], a=c, b=g);
+    DMux(in=dmux4, sel=sel[2], a=d, b=h);
 }
