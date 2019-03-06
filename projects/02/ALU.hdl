@@ -42,5 +42,43 @@ CHIP ALU {
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+    // zx, zy
+    Mux16(a=x, b=false, sel=zx, out=x1);
+    Mux16(a=y, b=false, sel=zy, out=y1);
+
+    // nx, ny
+    // Negate the value first, than select accordingly
+    Not16(in=x1, out=x1N);
+    Not16(in=y1, out=y1N);
+    Mux16(a=x1, b=x1N, sel=nx, out=x2);
+    Mux16(a=y1, b=y1N, sel=ny, out=y2);
+
+    // f
+    // Compute results of And and Add
+    And16(a=x2, b=y2, out=fAnd);
+    Add16(a=x2, b=y2, out=fAdd);
+    // Choose according to f
+    Mux16(a=fAnd, b=fAdd, sel=f, out=fOut);
+
+    // no
+    // Results for negated output
+    Not16(in=fOut, out=fOutN);
+    // Final output
+    Mux16(a=fOut, b=fOutN, sel=no, out=final);
+
+    // Need the final output to determine `zr` and `ng`
+    // But can't connect gate's output pin to part directly
+    Or16(a=final, b=false, out=out);
+
+
+    // zr
+    Add16(a=final, b=false, out=zr1);
+
+    Or16Way(in=zr1, out=zr2);
+    Not(in=zr2, out=zr);
+
+    // ng
+    // Could abstract another single chip as 'isNeg' to do that
+    IsNeg16(in=final, out=ng);
+
 }
