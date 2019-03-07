@@ -16,5 +16,25 @@ CHIP PC {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // load bit shall be `1` if any of the control bits are
+    Or(a=load, b=reset, out=l1);
+    Or(a=l1, b=inc, out=l2);
+    Register(in=rIn, load=l2, out=rOut);
+        // Mux16(a=rOut, b=in, sel=load, out=loadOut);
+
+    // reset
+    Mux16(a=rOut, b=false, sel=reset, out=resetOut);
+
+    // inc
+    Inc16(in=rOut, out=incOut);
+        // Mux16(a=rOut, b=rIncOut, sel=inc, out=incOut);
+
+    // Mux8 000: a; 001: load, b; 010: reset, c; 100: inc, e
+    // When more than one control bit enabled:
+    // 101: load & inc, f; 110: reset & inc, g; 111: h; 011: reset & load, d
+    // Precedency: reset > load > inc
+    Mux8Way16(a=rOut, b=in, c=false, d=false, e=incOut, f=in, g=false, h=false, sel[0]=load, sel[1]=reset, sel[2]=inc, out=rIn);
+
+    //Final output
+    Mux16(a=rOut, b=false, sel=false, out=out);
 }
