@@ -39,5 +39,62 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    // Decode
+    And(a=true, b=instruction[15], out=isCIns);
+    Not(in=isCIns, out=isAIns);
+
+    // The d-bits in C instructions
+    And(a=true, b=instruction[3], out=destM);
+    And(a=true, b=instruction[4], out=destD);
+    And(a=true, b=instruction[5], out=destA);
+    And(a=destM, b=isCIns, out=loadM);
+    And(a=destD, b=isCIns, out=loadD);
+    // If isAIns || (isCIns && destA), then load A register
+    And(a=destA, b=isCIns, out=CInsLoadA);
+    Or(a=CInsLoadA, b=isAIns, out=loadA);
+
+    
+    // Register D
+    DRegister(in=ALUOut, load=loadD, out=DOut);
+    // Register A
+    Mux16(a=instruction, b=ALUOut, sel=CInsLoadA, out=AIn);
+    ARegister(in=AIn, load=loadA, out=AOut);
+
+    // a-bit, load M[A] or A
+    Mux16(a=AOut, b=inM, sel=instruction[12], out=AMOut);
+
+    // Output to M
+    And(a=true, b=loadM, out=writeM);
+    Mux16(a=false, b=ALUOut, sel=loadM, out=outM);
+    Mux16(a=AOut, b=AOut, sel=false, out[0..14]=addressM);
+
+
+
+
+
+    ALU(x=DOut, y=AMOut, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=ALUOut, zr=zrALU, ng=ngALU);
+
+
+
+
+    // Whether ALUOut is positive
+    Or(a=zrALU, b=ngALU, out=zrngOr);
+    Not(in=zrngOr, out=pos);
+
+    // Check if j-bits equals to the ng-zr-pos bit pattern
+    // (x And y) Or (x Nand y)
+//    BitCmp3(x[0]=pos, x[1]=zrALU, x[2]=ngALU, y[0]=instruction[0], y[1]=instruction[1], y[2]=instruction[2], out=eql);
+
+    // o pos, 1 zr, 2 ng
+    And(a=instruction[0], b=pos, out=posAnd);
+    And(a=instruction[1], b=zrALU, out=zrAnd);
+    And(a=instruction[2], b=ngALU, out=ngAnd);
+
+    Or(a=posAnd, b=zrAnd, out=or1);
+    Or(a=ngAnd, b=or1, out=jmpOK);
+
+    // Make sure it's a C instruction
+    And(a=jmpOK, b=isCIns, out=loadPC);
+
+    PC(in=AOut, load=loadPC, inc=true, reset=reset, out[0..14]=pc);
 }

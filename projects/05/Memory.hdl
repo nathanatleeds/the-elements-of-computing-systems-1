@@ -27,5 +27,18 @@ CHIP Memory {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+    // Determine which chip that the address belongs to,
+    // RAM16K (14-bit addr), Screen (13-bit), or Keyboard
+    DMux(in=load, sel=address[14], a=lRAM, b=lScr);
+    
+    RAM16K(in=in, load=lRAM, address=address[0..13], out=RAMOut);
+
+    Screen(in=in, load=lScr, address=address[0..12], out=scrOut);
+
+    Keyboard(out=kbdOut);
+
+    // address[13..14]:
+    // Less than 0x4000, between 0x4000 and 0x5FFF, or equals to 0x6000
+    //           00, 01          10         11
+    Mux4Way16(a=RAMOut, b=RAMOut, c=scrOut, d=kbdOut, sel=address[13..14], out=out);
 }
